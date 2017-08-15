@@ -20,7 +20,7 @@ class IntentHandler: INExtension {
     func createTasks(fromTitles taskTitles: [String]) -> [INTask] {
         var tasks: [INTask] = []
         tasks = taskTitles.map { taskTitle -> INTask in
-            let task = INTask(title: taskTitle,
+            let task = INTask(title: INSpeakableString(spokenPhrase: taskTitle),
                               status: .notCompleted,
                               taskType: .completable,
                               spatialEventTrigger: nil,
@@ -37,7 +37,7 @@ class IntentHandler: INExtension {
 
 extension IntentHandler : INCreateTaskListIntentHandling {
     
-    public func handle(createTaskList intent: INCreateTaskListIntent,
+    public func handle(intent: INCreateTaskListIntent,
                        completion: @escaping (INCreateTaskListIntentResponse) -> Swift.Void) {
         
         guard let title = intent.title else {
@@ -45,12 +45,16 @@ extension IntentHandler : INCreateTaskListIntentHandling {
             return
         }
         
-        ListsManager.sharedInstance.createList(name: title)
+        ListsManager.sharedInstance.createList(name: title.spokenPhrase)
         
         var tasks: [INTask] = []
         if let taskTitles = intent.taskTitles {
-            tasks = createTasks(fromTitles: taskTitles)
-            ListsManager.sharedInstance.add(tasks: taskTitles, toList: title)
+            let taskTitlesStrings = taskTitles.map {
+                taskTitle -> String in
+                return taskTitle.spokenPhrase
+            }
+            tasks = createTasks(fromTitles: taskTitlesStrings)
+            ListsManager.sharedInstance.add(tasks: taskTitlesStrings, toList: title.spokenPhrase)
         }
         
         let response = INCreateTaskListIntentResponse(code: .success, userActivity: nil)
@@ -67,7 +71,7 @@ extension IntentHandler : INCreateTaskListIntentHandling {
 
 extension IntentHandler : INAddTasksIntentHandling {
     
-    public func handle(addTasks intent: INAddTasksIntent,
+    public func handle(intent: INAddTasksIntent,
                        completion: @escaping (INAddTasksIntentResponse) -> Swift.Void) {
         
         let taskList = intent.targetTaskList
@@ -79,8 +83,12 @@ extension IntentHandler : INAddTasksIntentHandling {
         
         var tasks: [INTask] = []
         if let taskTitles = intent.taskTitles {
-            tasks = createTasks(fromTitles: taskTitles)
-            ListsManager.sharedInstance.add(tasks: taskTitles, toList: title)
+            let taskTitlesStrings = taskTitles.map {
+                taskTitle -> String in
+                return taskTitle.spokenPhrase
+            }
+            tasks = createTasks(fromTitles: taskTitlesStrings)
+            ListsManager.sharedInstance.add(tasks: taskTitlesStrings, toList: title.spokenPhrase)
         }
         
         let response = INAddTasksIntentResponse(code: .success, userActivity: nil)
@@ -93,7 +101,7 @@ extension IntentHandler : INAddTasksIntentHandling {
 
 extension IntentHandler : INSetTaskAttributeIntentHandling {
     
-    public func handle(setTaskAttribute intent: INSetTaskAttributeIntent,
+    public func handle(intent: INSetTaskAttributeIntent,
                        completion: @escaping (INSetTaskAttributeIntentResponse) -> Swift.Void) {
         
         guard let title = intent.targetTask?.title else {
@@ -104,7 +112,7 @@ extension IntentHandler : INSetTaskAttributeIntentHandling {
         let status = intent.status
         
         if status == .completed {
-            ListsManager.sharedInstance.finish(task: title)
+            ListsManager.sharedInstance.finish(task: title.spokenPhrase)
         }
         let response = INSetTaskAttributeIntentResponse(code: .success, userActivity: nil)
         response.modifiedTask = intent.targetTask
